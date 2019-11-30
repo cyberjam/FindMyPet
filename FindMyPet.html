@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Simple Map</title>
-    <meta name="viewport" content="initial-scale=1.0">
+    <title>Geocoding Service</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <style>
       /* Always set the map height explicitly to define the size of the div
@@ -16,20 +16,100 @@
         margin: 0;
         padding: 0;
       }
+      #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
     </style>
   </head>
   <body>
+    <div id="floating-panel">
+      <input id="address" type="textbox" value=" ">
+      <input id="submit" type="button" value="검색">
+      <button type="button" onclick="loadXMLDoc()">Change Content</button>
+    </div>
     <div id="map"></div>
     <script>
-      var map;
+      // 초기지도
       function initMap() {
-        map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: 36.357113, lng: 127.422054},
-          zoom: 15
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 15,
+          center: {lat: 36.357113, lng: 127.422054}
+        });
+        var geocoder = new google.maps.Geocoder();
+
+        document.getElementById('submit').addEventListener('click', function() {
+          geocodeAddress(geocoder, map);
         });
       }
+
+      // 검색후 좌표값 
+      function geocodeAddress(geocoder, resultsMap) {
+        var address = document.getElementById('address').value;
+        geocoder.geocode({'address': address}, function(results, status) {
+          if (status === 'OK') {
+            resultsMap.setCenter(results[0].geometry.location);
+            var marker = new google.maps.Marker({
+              map: resultsMap,
+              position: results[0].geometry.location
+            });
+            // alert(results[0].geometry.location); 
+            // 좌표값 나옴 
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+      }
+      // 공공데이터 XML Request 및 parsing
+      function loadXMLDoc() {
+        var text;
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            
+
+            parser = new DOMParser();
+            xmlDoc = parser.parseFromString(this.responseText,"text/xml");
+
+            document.getElementById('address').value =
+            xmlDoc.getElementsByTagName("MsgBody")[0].getElementsByTagName("foundPlace")[1].childNodes[0].nodeValue;
+
+
+            // text = this.responseText
+            // document.getElementById("demo").innerHTML =
+            // this.responseText;
+          }
+
+        };
+
+
+        xhttp.open("GET", "http://apis.data.go.kr/6300000/animalDaejeonService/animalDaejeonList?serviceKey=&pageNo=1&numOfRows=10&searchCondition=1&searchCondition2=1&searchCondition3=1", true);
+        xhttp.send();
+
+        // text = "<bookstore><book>" +
+        // "<title>Everyday Italian</title>" +
+        // "<author>Giada De Laurentiis</author>" +
+        // "<year>2005</year>" +
+        // "</book></bookstore>";
+
+
+        
+      }
+
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap"
-    async defer></script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=
+&callback=initMap">
+    </script>
   </body>
 </html>
